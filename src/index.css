@@ -1,0 +1,282 @@
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Контент-завод — дизайн-система
+   TikTok-нативный: глубокий чёрный, неон cyan/magenta, чертёжная сетка цеха,
+   индустриальная кинетика конвейера. Неон работает на контрасте с чёрным —
+   дозированно. Шрифты: Unbounded (дисплей) / Inter (body) / JetBrains Mono (данные).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  color-scheme: dark;
+
+  /* поверхности */
+  --bg: #0a0a0b;
+  --bg-2: #050506;
+  --surface: #151517;
+  --surface-2: #1e1e22;
+  --text: #ffffff;
+  --text-soft: #a1a1aa;
+
+  /* акценты (rgb-компоненты — единый источник для прозрачностей) */
+  --cyan: #25f4ee;
+  --magenta: #fe2c55;
+  --cyan-rgb: 37 244 238;
+  --magenta-rgb: 254 44 85;
+  --grad: linear-gradient(135deg, #25f4ee, #fe2c55);
+
+  /* шрифты — одна точка истины */
+  --font-display: 'Unbounded Variable', system-ui, sans-serif;
+  --font-body: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', monospace;
+
+  /* линии и сетка */
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --grid: rgba(255, 255, 255, 0.04);
+
+  /* радиусы */
+  --r-chip: 8px;
+  --r-card: 16px;
+  --r-phone: 30px;
+  --r-pill: 999px;
+
+  /* тени / свечение */
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --glow-cyan: 0 0 24px rgba(37, 244, 238, 0.35);
+  --glow-magenta: 0 0 24px rgba(254, 44, 85, 0.35);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --gutter: 24px;
+  --maxw: 1240px;
+
+  font-family: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 16px;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* чертёжная сетка цеха + лёгкое неоновое зарево по краям */
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  content: '';
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 78%);
+}
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  content: '';
+  background:
+    radial-gradient(60% 40% at 82% 6%, rgb(var(--cyan-rgb) / 0.08), transparent 60%),
+    radial-gradient(50% 38% at 12% 4%, rgb(var(--magenta-rgb) / 0.08), transparent 60%);
+}
+
+button,
+a {
+  font: inherit;
+}
+button {
+  border: 0;
+  background: none;
+  color: inherit;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+p {
+  margin: 0;
+}
+
+::selection {
+  color: #04141a;
+  background: var(--cyan);
+}
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  overflow-wrap: break-word;
+}
+h1 {
+  font-size: clamp(2.6rem, 1.2rem + 6.2vw, 6rem);
+  text-transform: uppercase;
+}
+h2 {
+  font-size: clamp(1.9rem, 1.2rem + 3vw, 3.4rem);
+  text-transform: uppercase;
+}
+h3 {
+  font-size: clamp(1.2rem, 1rem + 1vw, 1.7rem);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ── primitives ─────────────────────────────────────────────────────────────── */
+
+.container {
+  width: min(var(--maxw), calc(100% - var(--gutter) - var(--gutter)));
+  margin-inline: auto;
+}
+
+.section {
+  position: relative;
+  padding: clamp(72px, 9vw, 130px) 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+.eyebrow::before {
+  width: 22px;
+  height: 1px;
+  background: var(--grad);
+  content: '';
+}
+
+.neon {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.section-lead {
+  max-width: 60ch;
+  margin-top: 16px;
+  color: var(--text-soft);
+  font-size: clamp(1rem, 0.95rem + 0.4vw, 1.2rem);
+}
+
+.surface {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  box-shadow: var(--shadow);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 11px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  font-weight: 600;
+  transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--cyan) 50%, var(--line-2));
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 60;
+}
+.skip-link:focus {
+  left: 12px;
+  top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--r-chip);
+  background: var(--cyan);
+  color: #04141a;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  /* бегущая строка трека не должна застрять в сдвинутом кадре */
+  .ttphone-music-track {
+    transform: none !important;
+  }
+}

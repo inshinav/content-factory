@@ -1,0 +1,33 @@
+import { useEffect, useRef, useState } from 'react'
+
+// Считалка throughput: доводит число до цели при появлении в зоне видимости.
+// Уважает prefers-reduced-motion — сразу показывает финал.
+
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+export function useCountUp(target: number, active: boolean, durationMs = 1400): number {
+  const [value, setValue] = useState(0)
+  const frame = useRef(0)
+  const started = useRef(false)
+  const reduced = prefersReducedMotion()
+
+  useEffect(() => {
+    if (reduced || !active || started.current) return
+    started.current = true
+
+    let startTime = 0
+    const tick = (now: number) => {
+      if (!startTime) startTime = now
+      const progress = Math.min(1, (now - startTime) / durationMs)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(target * eased)
+      if (progress < 1) frame.current = requestAnimationFrame(tick)
+    }
+    frame.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame.current)
+  }, [active, target, durationMs, reduced])
+
+  return reduced ? target : value
+}
