@@ -2,7 +2,7 @@
 // travel). Цифры подписчиков/лайков/охвата — ИЛЛЮСТРАЦИЯ, не факт. Хэндлы и реальные
 // изображения подставляются через слоты (avatar/clip в public/assets).
 
-export type NicheIcon = 'sun' | 'wind' | 'flame' | 'plane'
+export type NicheIcon = 'sun' | 'wind' | 'flame' | 'plane' | 'cat' | 'heart'
 
 export type Persona = {
   id: string
@@ -30,6 +30,10 @@ export type Persona = {
   /** Подпись и трек для мокапа TikTok. */
   caption: string
   track: string
+  /** Веб-оптимизированный вертикальный ролик. Если задан — мокап играет видео вместо статичного кадра. */
+  video?: string
+  /** Постер (первый кадр) для мгновенного отображения до загрузки видео. */
+  poster?: string
 }
 
 // Базовый префикс деплоя (Vite base): '/' в корне или '/content-factory/' в подпапке —
@@ -37,6 +41,50 @@ export type Persona = {
 const asset = (file: string) => `${import.meta.env.BASE_URL}assets/${file}`
 
 export const personas: Persona[] = [
+  {
+    id: 'nika',
+    handle: '@nika.prosto',
+    name: 'Ника',
+    niche: 'честно о себе',
+    nicheIcon: 'heart',
+    geo: 'RU',
+    followers: '312K',
+    likes: '4.8M',
+    saves: '291K',
+    shares: '88K',
+    style: 'живой разговор в кадр',
+    vibe: 'кружка, мягкий свет, без фильтров',
+    accent: 'magenta',
+    hue: 0,
+    avatar: asset('nika-poster.jpg'),
+    clip: asset('nika-poster.jpg'),
+    video: asset('nika.mp4'),
+    poster: asset('nika-poster.jpg'),
+    caption: 'я долго тянула. а потом просто устала тянуть одна',
+    track: 'тихий вечер · голос за кадром',
+  },
+  {
+    id: 'valera',
+    handle: '@kot.valera',
+    name: 'Валера',
+    niche: 'кот-психотерапевт',
+    nicheIcon: 'cat',
+    geo: 'RU',
+    followers: '980K',
+    likes: '22.1M',
+    saves: '1.4M',
+    shares: '512K',
+    style: 'дедпан, уютно',
+    vibe: 'лежит на клавиатуре, всё понимает',
+    accent: 'cyan',
+    hue: 200,
+    avatar: asset('valera-poster.jpg'),
+    clip: asset('valera-poster.jpg'),
+    video: asset('valera.mp4'),
+    poster: asset('valera-poster.jpg'),
+    caption: 'иногда просто посидеть рядом — уже помогает',
+    track: 'мурчание · 40 герц',
+  },
   {
     id: 'aurora',
     handle: '@aurora.daily',

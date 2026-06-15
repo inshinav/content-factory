@@ -1,7 +1,24 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Bookmark, Flame, Home, Inbox, Music2, Plane, Plus, Search, Share2, Sun, User, Wind } from 'lucide-react'
+import {
+  Bookmark,
+  Cat,
+  Flame,
+  Heart,
+  Home,
+  Inbox,
+  Music2,
+  Plane,
+  Plus,
+  Search,
+  Share2,
+  Sun,
+  User,
+  Volume2,
+  VolumeX,
+  Wind,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { NicheIcon, Persona } from '../data/personas'
 
@@ -12,26 +29,120 @@ const ACCENT: Record<Persona['accent'], string> = {
   magenta: 'var(--magenta)',
 }
 
-const NICHE: Record<NicheIcon, LucideIcon> = { sun: Sun, wind: Wind, flame: Flame, plane: Plane }
+const NICHE: Record<NicheIcon, LucideIcon> = {
+  sun: Sun,
+  wind: Wind,
+  flame: Flame,
+  plane: Plane,
+  cat: Cat,
+  heart: Heart,
+}
+
+// Один анмьют за раз: при включении звука инстанс кричит в window, остальные мьютят себя.
+const SOUND_EVENT = 'tt-sound'
 
 // UI-точный мокап экрана «Рекомендации» TikTok: табы, правый action-rail с пульсом
 // сердца / вращением муздиска / бегущей строкой трека, нижний таб-бар, прогресс-бар.
-// Лого не копируется — все иконки через lucide / кастомный SVG.
+// Если у персонажа есть persona.video — статичный кадр заменяется живым <video>
+// (muted-автоплей, звук по тапу, пауза вне экрана). Лого не копируется — иконки lucide / SVG.
 export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?: 'lg' | 'md' | 'sm' }) {
   const reduce = useReducedMotion()
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const [clipFailed, setClipFailed] = useState(false)
+  const [muted, setMuted] = useState(true)
+  const [progress, setProgress] = useState(0)
+  const [hintShow, setHintShow] = useState(false)
+
   const Niche = NICHE[persona.nicheIcon]
+  const hasVideo = Boolean(persona.video) && !clipFailed
   const style = { '--acc': ACCENT[persona.accent], '--hue': `${persona.hue}deg` } as AccentStyle
+
+  // muted-автоплей: у React атрибут `muted` не всегда долетает до DOM-свойства и блокирует
+  // autoplay — выставляем императивно через ref. Плюс показываем подсказку ~3 c.
+  useEffect(() => {
+    if (!hasVideo) return
+    const v = videoRef.current
+    if (!v) return
+    v.muted = true
+    void v.play().catch(() => {})
+    setHintShow(true)
+    const t = setTimeout(() => setHintShow(false), 3200)
+    return () => clearTimeout(t)
+  }, [hasVideo])
+
+  // играем только в зоне видимости — экономим CPU при нескольких телефонах сразу.
+  useEffect(() => {
+    if (!hasVideo) return
+    const v = videoRef.current
+    if (!v) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) void v.play().catch(() => {})
+          else v.pause()
+        }
+      },
+      { threshold: 0.5 },
+    )
+    io.observe(v)
+    return () => io.disconnect()
+  }, [hasVideo])
+
+  // другой ролик включил звук → мьютим себя (один анмьют за раз).
+  useEffect(() => {
+    if (!hasVideo) return
+    function onSound(e: Event) {
+      const id = (e as CustomEvent<string>).detail
+      if (id === persona.id) return
+      const v = videoRef.current
+      if (v) v.muted = true
+      setMuted(true)
+    }
+    window.addEventListener(SOUND_EVENT, onSound)
+    return () => window.removeEventListener(SOUND_EVENT, onSound)
+  }, [hasVideo, persona.id])
+
+  function toggleSound() {
+    const v = videoRef.current
+    if (!v) return
+    const nextMuted = !v.muted
+    v.muted = nextMuted
+    setMuted(nextMuted)
+    if (!nextMuted) {
+      window.dispatchEvent(new CustomEvent(SOUND_EVENT, { detail: persona.id }))
+      void v.play().catch(() => {})
+    }
+  }
+
+  function onTimeUpdate() {
+    const v = videoRef.current
+    if (v && v.duration) setProgress(v.currentTime / v.duration)
+  }
 
   return (
     <div className={`ttphone ttphone--${size}`} style={style}>
       <div className="ttphone-screen">
-        {/* видео-кадр: реальный clip из /assets, иначе намеренный motion-градиент с иконкой ниши */}
+        {/* кадр: живой ролик, реальный clip из /assets или намеренный motion-градиент с иконкой ниши */}
         <div className="ttphone-bg" aria-hidden="true">
-          {!clipFailed && (
+          {hasVideo && (
+            <video
+              ref={videoRef}
+              className="ttphone-clip"
+              src={persona.video}
+              poster={persona.poster}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              onTimeUpdate={onTimeUpdate}
+              onError={() => setClipFailed(true)}
+            />
+          )}
+          {!hasVideo && !clipFailed && (
             <img className="ttphone-clip" src={persona.clip} alt="" onError={() => setClipFailed(true)} />
           )}
-          {clipFailed && (
+          {!hasVideo && clipFailed && (
             <span className="ttphone-niche">
               <Niche size={64} strokeWidth={1.25} />
             </span>
@@ -39,9 +150,9 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
           <span className="ttphone-noise" />
         </div>
 
-        {/* прогресс-бар сверху */}
+        {/* прогресс-бар: реальный по timeupdate у видео, иначе статичный */}
         <span className="ttphone-progress" aria-hidden="true">
-          <span />
+          <span style={hasVideo ? { width: `${Math.round(progress * 100)}%` } : undefined} />
         </span>
 
         {/* верхние табы */}
@@ -54,6 +165,29 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
           <i />
           live
         </span>
+
+        {hasVideo && (
+          <>
+            {/* бейдж «реальный ролик» — отличает живые клипы от градиентных плейсхолдеров */}
+            <span className="ttphone-real mono" aria-hidden="true">
+              <i />
+              реальный ролик
+            </span>
+            <button
+              type="button"
+              className="ttphone-sound"
+              onClick={toggleSound}
+              aria-label={
+                muted ? `Включить звук ролика ${persona.handle}` : `Выключить звук ролика ${persona.handle}`
+              }
+            >
+              {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </button>
+            <span className={`ttphone-hint mono${hintShow ? ' is-show' : ''}`} aria-hidden="true">
+              нажми для звука
+            </span>
+          </>
+        )}
 
         {/* правый action-rail */}
         <div className="ttphone-rail" aria-hidden="true">
