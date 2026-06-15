@@ -30,7 +30,7 @@ function HeroStage() {
             animate={reduce ? undefined : { y: [0, -14, 0] }}
             transition={{ duration: 5 + i, repeat: Infinity, ease: 'easeInOut', delay: i * 0.5 }}
           >
-            <TikTokPhone persona={p} size={i === 1 ? 'md' : 'sm'} />
+            <TikTokPhone persona={p} size={i === 1 ? 'md' : 'sm'} context="в шапке" />
           </motion.div>
         ))}
       </div>

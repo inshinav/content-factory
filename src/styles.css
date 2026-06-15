@@ -415,7 +415,7 @@
 /* живой ролик: бейдж «реальный ролик», кнопка звука, всплывающая подсказка */
 .ttphone-real {
   position: absolute;
-  top: 14px;
+  top: 40px;
   right: 10px;
   z-index: 5;
   display: inline-flex;
@@ -443,7 +443,7 @@
 }
 .ttphone-sound {
   position: absolute;
-  top: 42px;
+  top: 68px;
   right: 10px;
   z-index: 6;
   display: grid;
@@ -473,7 +473,7 @@
 }
 .ttphone-hint {
   position: absolute;
-  top: 78px;
+  top: 100px;
   right: 10px;
   z-index: 5;
   padding: 4px 8px;
@@ -499,14 +499,13 @@
   transform: translateY(0);
 }
 .ttphone--sm .ttphone-sound {
-  top: 34px;
+  top: 42px;
   width: 26px;
   height: 26px;
 }
-.ttphone--sm .ttphone-real {
-  top: 12px;
-  font-size: 7px;
-}
+/* на маленьком (декоративном) мокапе оставляем только кнопку звука — бейдж и подсказка
+   не влезают по ширине и наезжали бы на live-пилл и табы */
+.ttphone--sm .ttphone-real,
 .ttphone--sm .ttphone-hint {
   display: none;
 }

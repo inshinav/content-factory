@@ -23,7 +23,7 @@ export function GallerySection() {
       <motion.div className="gallery-rail" {...staggerParent} aria-label="Примеры роликов">
         {personas.map((p) => (
           <motion.div className="gallery-cell" key={p.id} {...staggerChild}>
-            <TikTokPhone persona={p} size="md" />
+            <TikTokPhone persona={p} size="md" context="в ленте" />
           </motion.div>
         ))}
         <motion.div className="gallery-more surface" {...staggerChild} aria-hidden="true">

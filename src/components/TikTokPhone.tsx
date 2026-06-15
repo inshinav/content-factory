@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 import {
@@ -23,6 +23,7 @@ import type { LucideIcon } from 'lucide-react'
 import type { NicheIcon, Persona } from '../data/personas'
 
 type AccentStyle = CSSProperties & { '--acc'?: string; '--hue'?: string }
+type SoundEvent = CustomEvent<string>
 
 const ACCENT: Record<Persona['accent'], string> = {
   cyan: 'var(--cyan)',
@@ -38,19 +39,31 @@ const NICHE: Record<NicheIcon, LucideIcon> = {
   heart: Heart,
 }
 
-// Один анмьют за раз: при включении звука инстанс кричит в window, остальные мьютят себя.
+// Один анмьют за раз: включая звук, инстанс кричит в window СВОИМ instanceId, остальные
+// мьютят себя. Гард по instanceId (не persona.id) — иначе два инстанса одного персонажа
+// (он рендерится и в герое, и в ленте) не заглушали бы друг друга.
 const SOUND_EVENT = 'tt-sound'
 
 // UI-точный мокап экрана «Рекомендации» TikTok: табы, правый action-rail с пульсом
 // сердца / вращением муздиска / бегущей строкой трека, нижний таб-бар, прогресс-бар.
 // Если у персонажа есть persona.video — статичный кадр заменяется живым <video>
 // (muted-автоплей, звук по тапу, пауза вне экрана). Лого не копируется — иконки lucide / SVG.
-export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?: 'lg' | 'md' | 'sm' }) {
+export function TikTokPhone({
+  persona,
+  size = 'md',
+  context,
+}: {
+  persona: Persona
+  size?: 'lg' | 'md' | 'sm'
+  /** Откуда мокап (напр. «в шапке» / «в ленте») — уточняет aria-label кнопки звука у дублей. */
+  context?: string
+}) {
   const reduce = useReducedMotion()
+  const instanceId = useId()
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [clipFailed, setClipFailed] = useState(false)
   const [muted, setMuted] = useState(true)
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState(0) // целый процент 0..100
   const [hintShow, setHintShow] = useState(false)
 
   const Niche = NICHE[persona.nicheIcon]
@@ -58,19 +71,19 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
   const style = { '--acc': ACCENT[persona.accent], '--hue': `${persona.hue}deg` } as AccentStyle
 
   // muted-автоплей: у React атрибут `muted` не всегда долетает до DOM-свойства и блокирует
-  // autoplay — выставляем императивно через ref. Плюс показываем подсказку ~3 c.
+  // autoplay — выставляем императивно через ref. play/pause отдаём IntersectionObserver'у
+  // (единый источник), чтобы не плодить конкурентные play()-промисы. Плюс подсказка ~3 c.
   useEffect(() => {
     if (!hasVideo) return
     const v = videoRef.current
     if (!v) return
     v.muted = true
-    void v.play().catch(() => {})
     setHintShow(true)
     const t = setTimeout(() => setHintShow(false), 3200)
     return () => clearTimeout(t)
   }, [hasVideo])
 
-  // играем только в зоне видимости — экономим CPU при нескольких телефонах сразу.
+  // играем только в зоне видимости — экономим CPU и не декодируем ролики вне экрана.
   useEffect(() => {
     if (!hasVideo) return
     const v = videoRef.current
@@ -88,19 +101,18 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
     return () => io.disconnect()
   }, [hasVideo])
 
-  // другой ролик включил звук → мьютим себя (один анмьют за раз).
+  // другой ролик включил звук → мьютим себя (один анмьют за раз; гард по instanceId).
   useEffect(() => {
     if (!hasVideo) return
     function onSound(e: Event) {
-      const id = (e as CustomEvent<string>).detail
-      if (id === persona.id) return
+      if ((e as SoundEvent).detail === instanceId) return
       const v = videoRef.current
       if (v) v.muted = true
       setMuted(true)
     }
     window.addEventListener(SOUND_EVENT, onSound)
     return () => window.removeEventListener(SOUND_EVENT, onSound)
-  }, [hasVideo, persona.id])
+  }, [hasVideo, instanceId])
 
   function toggleSound() {
     const v = videoRef.current
@@ -109,14 +121,16 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
     v.muted = nextMuted
     setMuted(nextMuted)
     if (!nextMuted) {
-      window.dispatchEvent(new CustomEvent(SOUND_EVENT, { detail: persona.id }))
+      window.dispatchEvent(new CustomEvent(SOUND_EVENT, { detail: instanceId }))
       void v.play().catch(() => {})
     }
   }
 
   function onTimeUpdate() {
     const v = videoRef.current
-    if (v && v.duration) setProgress(v.currentTime / v.duration)
+    if (!v || !v.duration) return
+    const pct = Math.round((v.currentTime / v.duration) * 100)
+    setProgress((prev) => (prev === pct ? prev : pct))
   }
 
   return (
@@ -152,7 +166,7 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
 
         {/* прогресс-бар: реальный по timeupdate у видео, иначе статичный */}
         <span className="ttphone-progress" aria-hidden="true">
-          <span style={hasVideo ? { width: `${Math.round(progress * 100)}%` } : undefined} />
+          <span style={hasVideo ? { width: `${progress}%` } : undefined} />
         </span>
 
         {/* верхние табы */}
@@ -177,9 +191,9 @@ export function TikTokPhone({ persona, size = 'md' }: { persona: Persona; size?:
               type="button"
               className="ttphone-sound"
               onClick={toggleSound}
-              aria-label={
-                muted ? `Включить звук ролика ${persona.handle}` : `Выключить звук ролика ${persona.handle}`
-              }
+              aria-label={`${muted ? 'Включить' : 'Выключить'} звук ролика ${persona.handle}${
+                context ? ` (${context})` : ''
+              }`}
             >
               {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
             </button>
