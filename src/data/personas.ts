@@ -32,6 +32,10 @@ export type Persona = {
   track: string
 }
 
+// Базовый префикс деплоя (Vite base): '/' в корне или '/content-factory/' в подпапке —
+// чтобы слоты картинок резолвились в обоих случаях (не мимо подпапки).
+const asset = (file: string) => `${import.meta.env.BASE_URL}assets/${file}`
+
 export const personas: Persona[] = [
   {
     id: 'aurora',
@@ -48,8 +52,8 @@ export const personas: Persona[] = [
     vibe: 'утро, кофе, мягкий свет',
     accent: 'cyan',
     hue: 0,
-    avatar: '/assets/persona-1.jpg',
-    clip: '/assets/clip-1.jpg',
+    avatar: asset('persona-1.jpg'),
+    clip: asset('clip-1.jpg'),
     caption: 'один обычный вторник, но по-доброму',
     track: 'soft morning — lo-fi loop',
   },
@@ -68,8 +72,8 @@ export const personas: Persona[] = [
     vibe: 'дыхание, пауза, тишина',
     accent: 'magenta',
     hue: 28,
-    avatar: '/assets/persona-2.jpg',
-    clip: '/assets/clip-2.jpg',
+    avatar: asset('persona-2.jpg'),
+    clip: asset('clip-2.jpg'),
     caption: '30 секунд тишины перед днём',
     track: 'ambient still — pad',
   },
@@ -88,8 +92,8 @@ export const personas: Persona[] = [
     vibe: 'движение, ритм, драйв',
     accent: 'cyan',
     hue: -18,
-    avatar: '/assets/persona-3.jpg',
-    clip: '/assets/clip-3.jpg',
+    avatar: asset('persona-3.jpg'),
+    clip: asset('clip-3.jpg'),
     caption: 'пять минут, без оправданий',
     track: 'push it — 124 bpm',
   },
@@ -108,8 +112,8 @@ export const personas: Persona[] = [
     vibe: 'дороги, окна, горизонты',
     accent: 'magenta',
     hue: 52,
-    avatar: '/assets/persona-4.jpg',
-    clip: '/assets/clip-4.jpg',
+    avatar: asset('persona-4.jpg'),
+    clip: asset('clip-4.jpg'),
     caption: 'где заканчивается асфальт',
     track: 'wide horizon — cinematic',
   },
